@@ -1,59 +1,10 @@
-import React from "react";
-import {Line} from 'react-chartjs-2'
+import React,{useState, useEffect  } from "react";
+import {Line} from 'react-chartjs-2';
+import initailstate from "../store";
 
-class Chart extends React.Component {
-  state = {
-    lineChartData: {
-      labels: [],
-      datasets: [
-        {
-          label: "BTC-USD",
-          backgroundColor: "lightblue",
-          borderColor: "red",
-          pointBackgroundColor: "black",
-          pointBorderColor: "green",
-          borderWidth: "2",
-          data: [],
-        },
-      ],
-    },
-    lineChartOptions: {
-      responsive: true,
-      maintainAspectRatio: false,
-      tooltips: {
-        enabled: true,
-      },
-      title: {
-        display: true,
-        text: "BTC-USD",
-        fontSize: 20
-    },
-      scales: {
-        xAxes: [
-          {
-            ticks: {
-              autoSkip: true,
-              maxTicksLimit: 10,
-            },
-          },
-          {
-            scaleLabel: {
-              display: true,
-              labelString: 'Time axis'
-            }
-          }
-        ],
-        yAxes: [{
-          scaleLabel: {
-            display: true,
-            labelString: 'USD equivalent of BTC'
-          }
-        }],
-      },
-    },
-  };
-
-  componentDidMount() {
+const Chart =()=> {
+  const [state, setState] = useState(initailstate);
+  useEffect(() => {
     const subscribe = {
       type: "subscribe",
       channels: [
@@ -64,42 +15,40 @@ class Chart extends React.Component {
       ],
     };
 
-    this.ws = new WebSocket("wss://ws-feed.pro.coinbase.com");
+  const  ws = new WebSocket("wss://ws-feed.pro.coinbase.com");
 
-    this.ws.onopen = () => {
-      this.ws.send(JSON.stringify(subscribe));
+    ws.onopen = () => {
+      ws.send(JSON.stringify(subscribe));
     };
 
-    this.ws.onmessage = (e) => {
+    ws.onmessage = (e) => {
       const response = JSON.parse(e.data);
       if (response.type !== "ticker") return;
       console.log("socket response: ", response);
-      const oldData = this.state.lineChartData.datasets[0];
+      const oldData = state.lineChartData.datasets[0];
       const newData = { ...oldData };
       newData.data.push(response.price);
 
       const newChartData = {
-        ...this.state.lineChartData,
+        ...state.lineChartData,
         datasets: [newData],
-        labels: this.state.lineChartData.labels.concat(
+        labels: state.lineChartData.labels.concat(
           new Date().toLocaleTimeString()
         ),
       };
-      this.setState({ lineChartData: newChartData });
+      setState({ lineChartData: newChartData });
     };
-  }
+    return () => {
+      ws.close();
+    }
+  }, [])
 
-  componentWillUnmount() {
-    this.ws.close();
-  }
-
-  render() {
     return (
       <div className="container p-2">
-        <Line data = {this.state.lineChartData} options = {this.state.lineChartOptions} height={600}></Line>
+        <Line data = {state.lineChartData} options = {state.lineChartOptions} height={600}></Line>
       </div>
     );
-  }
+  
 }
 
 export default Chart;
