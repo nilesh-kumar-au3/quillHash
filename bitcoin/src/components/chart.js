@@ -41,7 +41,7 @@ const Chart =()=> {
     return () => {
       ws.close();
     }
-  }, [])
+  }, [state.lineChartData])
 
     return (
       <div className="container p-2">
